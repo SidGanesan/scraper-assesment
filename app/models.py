@@ -5,7 +5,7 @@ from structlog import get_logger
 
 from app import db
 from datetime import datetime
-from sqlalchemy import ForeignKey, String, UnicodeText, UniqueConstraint, func, Index
+from sqlalchemy import ForeignKey, String, UnicodeText, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.support.similarweb import SimilarWebIn
 
@@ -112,11 +112,19 @@ class PageScrape(db.Model):  # type: ignore
 
         additional_ids = dict(page_id=page.id, scrape_id=scrape.id)
 
-        log.info("Creating page", page_id=scrape.id, page_path=scrape.path)
+        log.info(
+            "Creating page scrape",
+            page_id=page.id,
+            page_scrape_id=scrape.id,
+            page_path=scrape.path,
+        )
         # Create all of the one to many data points
         for sw_traffic in sw_page.monthly_traffic:
-            # TODO: Deduplicate these records? If the page is scraped daily then
-            # there will be loads of redundant data.
+            if PageTraffic.query.filter_by(
+                page_id=page.id, month=sw_traffic.month, year=sw_traffic.year
+            ).one_or_none():
+                continue
+
             traffic = PageTraffic(**asdict(sw_traffic), **additional_ids)
             db.session.add(traffic)
 
@@ -143,6 +151,8 @@ class PageTraffic(db.Model):  # type: ignore
 
     scrape_id: Mapped[int] = mapped_column(ForeignKey("page_scrape.id"))
     scrape: Mapped["PageScrape"] = relationship(back_populates="traffic")
+
+    __table_args__ = (UniqueConstraint("page_id", "month", "year"),)
 
 
 class PageDemographics(db.Model):  # type: ignore
