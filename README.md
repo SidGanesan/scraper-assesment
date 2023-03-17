@@ -24,6 +24,10 @@ The final step is to initialise the DB tables using:
 flask cli create_tables
 ```
 
+The local versions of the scraped pages has been omitted from the repo and is in the .gitignore as they are not 
+appropriate files for source control. To run everything as the challenege outline the local versions of the
+scraped pages should be saved to `app/local/scraped_pages/`.
+
 This project has been formatted using [Black](https://pypi.org/project/black/) and checked with 
 [MyPy](https://mypy.readthedocs.io/en/stable/) to ensure type safety.
 
